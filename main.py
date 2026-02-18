@@ -1,11 +1,13 @@
-import os, discord, json
+import os, discord, json, asyncio
 from dotenv import load_dotenv
 from pathlib import Path
+from discord.utils import get
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 intents = discord.Intents.default()
 intents.message_content = True
+intents.members = True
 client = discord.Client(intents=intents)
 client.wiped_messages = set()  # Track wiped messages to prevent re-logging
 
@@ -98,6 +100,38 @@ async def on_message(message):
                 if msg.author == message.author:
                     client.wiped_messages.add(msg.id)
                     await msg.delete()
+    elif message.content.startswith('!boom'):
+        amount = message.content.replace('!boom', '').strip()
+        if amount.isdigit():
+            amount = int(amount)
+        else:
+            amount = 5  # Default amount if not a number
+        
+        for i in range(amount):  # Adjust the amount as needed
+            await message.channel.send("Boom! 💥")
+            await asyncio.sleep(0.25)  # Add a small delay between messages to avoid spamming too quickly
+    elif message.content.startswith('!config.reload'):
+        client.configs = load_configs()
+        await message.channel.send("Configurations reloaded successfully.")
+    elif message.content.startswith('!terminate'):
+        configs = client.configs
+        
+        if (message.author == client.user or any(role.name.lower() in configs["deletionRoleWhitelist"]["guild_staff_roles"] for role in message.author.roles)):
+            content = message.content.replace('!terminate', '').strip()
+            if message.mentions:
+                member = message.mentions[0]
+            else:
+                member = get(message.guild.members, name=content) or \
+                        get(message.guild.members, display_name=content)
+
+            if member:
+                await message.channel.send(f"Terminating {member.display_name}... 💀")
+                await member.kick(reason=f"Terminated by {message.author}")
+            else:
+                await message.channel.send(f"User '{content}' not found.")
+        else:
+            await message.reply("You do not have permission to use this command.")
+        
 
 
 @client.event
