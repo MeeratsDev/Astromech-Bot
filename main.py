@@ -1,14 +1,12 @@
 import os, discord, json
 from dotenv import load_dotenv
+from pathlib import Path
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 intents = discord.Intents.default()
 intents.message_content = True
 client = discord.Client(intents=intents)
-
-
-
 
 # --- Helper Functions ---
 async def send_as_webhook(channel, name, content, avatar_url=None):
@@ -30,12 +28,18 @@ async def send_as_webhook(channel, name, content, avatar_url=None):
         print(f"Webhook Error: {e}")
         return False
 
-async def load_configs():
-    for file in os.listdir('configs'):
-        if file.endswith('.json'):
-            with open(os.path.join('configs', file), 'r') as f:
-                config_data = json.load(f)
-                globals()[os.path.splitext(file)[0]] = config_data
+def load_configs():
+    configs = {}
+    config_path = Path("./configs")
+
+    for file in config_path.glob("*.json"):
+        try:
+            with file.open("r", encoding="utf-8") as f:
+                configs[file.stem] = json.load(f)
+        except json.JSONDecodeError as e:
+            print(f"Error parsing {file.name}: {e}")
+
+    return configs
 
 # --- Event Handlers ---
 @client.event
@@ -44,7 +48,7 @@ async def on_ready():
     for guild in client.guilds:
         bot_member = guild.me
         
-        if not bot_member.guild_permissions.administrator:
+        '''if not bot_member.guild_permissions.administrator:
             try:
                 owner = await guild.fetch_member(guild.owner_id)
                 owner_mention = owner.mention
@@ -60,12 +64,12 @@ async def on_ready():
             target_channel = mods_channel or general_channel
 
             if target_channel:
-                await target_channel.send(warning_msg)
+                await target_channel.send(warning_msg)'''
         
         if "configs" in [channel.name for channel in guild.channels]:
-            load_configs()
+            client.configs = load_configs() 
         else: 
-            load_configs()
+            client.configs = load_configs()
             print(f"No configs channel found in {guild.name}. Loaded default configurations.")
 
     
@@ -80,13 +84,17 @@ async def on_message(message):
     if message.content.startswith('!debug.info'):
         debug_info = f"User: {message.author}\nChannel: {message.channel}\nGuild: {message.guild}"
         await message.channel.send(f"Debug Info:\n{debug_info}")
+    # user wipe command, deletes all messages from the user who invoked the command.    
     elif message.content.startswith('!wipe'):
-        user = message.author
+        permissions = message.channel.permissions_for(message.guild.me)
+        if not permissions.manage_messages:
+            await message.channel.send("Error: Missing 'Manage Messages' permission. Cannot perform wipe.")
+            return
+        else: 
+            async for msg in message.channel.history(limit=None):
+                if msg.author == message.author:
+                    await msg.delete()
 
-        for channel in message.guild.text_channels:
-            for message in await channel.history().flatten():
-                if message.author == user:
-                    await message.delete()
 
 @client.event
 async def on_member_join(member):
@@ -97,11 +105,20 @@ async def on_member_join(member):
 @client.event
 async def on_message_delete(message):
     permissions = message.channel.permissions_for(message.guild.me)
+    configs = client.configs
+    
+    staff_roles = configs["deletionRoleWhitelist"]["guild_staff_roles"]
+    trusted_roles = configs["deletionRoleWhitelist"]["guild_trusted_roles"]
+    whitelisted_users = configs["deletionUserWhitelist"]["whitelisted_users"]
+    
+    whitelisted_roles = {
+        r.lower() for r in (staff_roles + trusted_roles)
+    }
     
     if permissions.manage_webhooks:
 
         # flags to allow deletion.
-        if message.author == client.user or any(role.name.lower() in globals().get('deletionRoleWhitelist', []) for role in message.author.roles):
+        if (message.author == client.user or message.author.name.lower() in {u.lower() for u in whitelisted_users} or any(role.name.lower() in whitelisted_roles for role in message.author.roles)):
             return
         logs_channel = discord.utils.get(message.guild.text_channels, name='logs')
         msg_channel = discord.utils.get(message.guild.text_channels, name=message.channel.name)
