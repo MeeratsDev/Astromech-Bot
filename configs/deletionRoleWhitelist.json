@@ -1,0 +1,35 @@
+{
+    "guild_staff_roles": [
+        "owner",
+        "server owner",
+        "co-owner",
+        "co owner",
+        "administrator",
+        "admin",
+        "senior admin",
+        "head admin",
+        "moderator",
+        "mod",
+        "senior moderator",
+        "junior moderator",
+        "lead moderator",
+        "head moderator",
+        "staff",
+        "staff team",
+        "server staff",
+        "community staff",
+        "helper",
+        "support",
+        "support team",
+        "trial moderator",
+        "trial mod"
+    ],
+    "guild_trusted_roles": [
+        "whitelisted",
+        "whitelist",
+        "trusted",
+        ".",
+        "+",
+        "/"
+    ]
+}
