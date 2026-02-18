@@ -7,6 +7,7 @@ TOKEN = os.getenv('DISCORD_TOKEN')
 intents = discord.Intents.default()
 intents.message_content = True
 client = discord.Client(intents=intents)
+client.wiped_messages = set()  # Track wiped messages to prevent re-logging
 
 # --- Helper Functions ---
 async def send_as_webhook(channel, name, content, avatar_url=None):
@@ -48,7 +49,7 @@ async def on_ready():
     for guild in client.guilds:
         bot_member = guild.me
         
-        '''if not bot_member.guild_permissions.administrator:
+        if not bot_member.guild_permissions.administrator:
             try:
                 owner = await guild.fetch_member(guild.owner_id)
                 owner_mention = owner.mention
@@ -64,7 +65,7 @@ async def on_ready():
             target_channel = mods_channel or general_channel
 
             if target_channel:
-                await target_channel.send(warning_msg)'''
+                await target_channel.send(warning_msg)
         
         if "configs" in [channel.name for channel in guild.channels]:
             client.configs = load_configs() 
@@ -93,6 +94,7 @@ async def on_message(message):
         else: 
             async for msg in message.channel.history(limit=None):
                 if msg.author == message.author:
+                    client.wiped_messages.add(msg.id)
                     await msg.delete()
 
 
@@ -115,23 +117,38 @@ async def on_message_delete(message):
         r.lower() for r in (staff_roles + trusted_roles)
     }
     
+    if message.id in client.wiped_messages: # check if the message was wiped by the bot, if so, skip logging and remove from set
+            client.wiped_messages.remove(message.id)
+            return
+    
     if permissions.manage_webhooks:
 
         # flags to allow deletion.
         if (message.author == client.user or message.author.name.lower() in {u.lower() for u in whitelisted_users} or any(role.name.lower() in whitelisted_roles for role in message.author.roles)):
             return
+        
         logs_channel = discord.utils.get(message.guild.text_channels, name='logs')
         msg_channel = discord.utils.get(message.guild.text_channels, name=message.channel.name)
         if logs_channel:
             await logs_channel.send(f'{message.author.mention}: "{message.content}"')
         
         if msg_channel:
-            await send_as_webhook(
-                channel=msg_channel,
-                name=str(message.author) + " (" + str(message.author.display_name) + ")",
-                content=message.content,
-                avatar_url=message.author.avatar.url if message.author.avatar else None
-            )
+            print(message.author.display_name, message.author, message.author.name) # debugging to check if display name is the same as username, if so, just use username, if not, use both.
+            
+            if str(message.author) == str(message.author.display_name):   
+                await send_as_webhook(
+                    channel=msg_channel,
+                    name=str(message.author),
+                    content=message.content,
+                    avatar_url=message.author.avatar.url if message.author.avatar else None
+                )
+            else:
+                await send_as_webhook(
+                    channel=msg_channel,
+                    name=str(message.author.name) + " (" + str(message.author.display_name) + ")",
+                    content=message.content,
+                    avatar_url=message.author.avatar.url if message.author.avatar else None
+                )
     else:
         print(f"Warning: Missing 'Manage Webhooks' permission in {message.channel.name}. Falling back to regular message logging.")
         await message.channel.send(f'<{message.author.mention}> "{message.content}"')
