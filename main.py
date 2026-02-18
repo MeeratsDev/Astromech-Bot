@@ -29,6 +29,7 @@ async def send_as_webhook(channel, name, content, avatar_url=None):
         print(f"Webhook Error: {e}")
         return False
 
+
 def load_configs():
     configs = {}
     config_path = Path("./configs")
@@ -41,6 +42,7 @@ def load_configs():
             print(f"Error parsing {file.name}: {e}")
 
     return configs
+
 
 # --- Event Handlers ---
 @client.event
@@ -104,6 +106,7 @@ async def on_member_join(member):
     if welcome_channel:
         await welcome_channel.send(f'Welcome to the server, {member.mention}!')
         
+        
 @client.event
 async def on_message_delete(message):
     permissions = message.channel.permissions_for(message.guild.me)
@@ -123,8 +126,8 @@ async def on_message_delete(message):
     
     if permissions.manage_webhooks:
 
-        # flags to allow deletion.
-        if (message.author == client.user or message.author.name.lower() in {u.lower() for u in whitelisted_users} or any(role.name.lower() in whitelisted_roles for role in message.author.roles)):
+        # flags to allow deletion.                                                                                                    this errors sometimes idk why but it does and it's only happened once
+        if (message.author == client.user or message.author.name.lower() in {u.lower() for u in whitelisted_users} or any(role.name.lower() in whitelisted_roles for role in message.author.roles)): 
             return
         
         logs_channel = discord.utils.get(message.guild.text_channels, name='logs')
@@ -135,7 +138,7 @@ async def on_message_delete(message):
         if msg_channel:
             print(message.author.display_name, message.author, message.author.name) # debugging to check if display name is the same as username, if so, just use username, if not, use both.
             
-            if str(message.author) == str(message.author.display_name):   
+            if str(message.author) == str(message.author.display_name):   # if the display name is the same as the username, just use the username, otherwise use both to avoid confusion.
                 await send_as_webhook(
                     channel=msg_channel,
                     name=str(message.author),
@@ -152,5 +155,6 @@ async def on_message_delete(message):
     else:
         print(f"Warning: Missing 'Manage Webhooks' permission in {message.channel.name}. Falling back to regular message logging.")
         await message.channel.send(f'<{message.author.mention}> "{message.content}"')
+        
         
 client.run(TOKEN)
