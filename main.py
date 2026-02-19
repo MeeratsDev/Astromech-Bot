@@ -31,7 +31,6 @@ async def send_as_webhook(channel, name, content, avatar_url=None):
         print(f"Webhook Error: {e}")
         return False
 
-
 def load_configs():
     configs = {}
     config_path = Path("./configs")
@@ -45,11 +44,38 @@ def load_configs():
 
     return configs
 
+async def load_configs_from_channel(guild, channel_name='configs'):
+    configs = {}
+    configs_channel = discord.utils.get(guild.text_channels, name=channel_name)
+    
+    if configs_channel:
+        try:
+            async for message in configs_channel.history(limit=100):
+                if message.attachments:
+                    attachment = message.attachments[0]
+                    if attachment.filename.endswith('.json'):
+                        file_content = await attachment.read()
+                        try:
+                            config_data = json.loads(file_content)
+                            config_name = attachment.filename[:-5]  # Remove .json extension
+                            configs[config_name] = config_data
+                        except json.JSONDecodeError as e:
+                            print(f"Error parsing {attachment.filename}: {e}")
+                    else:
+                        print(f"Skipping {attachment.filename}: Not a JSON file.")
+                else:
+                    print(f"Skipping message {message.id}: No attachments found.")
+        except Exception as e:
+            print(f"Error loading configs from channel: {e}")
+    
+    return configs
+
 
 # --- Event Handlers ---
 @client.event
 async def on_ready():
     print(f'{client.user} has connected to Discord!')
+    print(f"WELCOME TO ASTROMECH!")
     for guild in client.guilds:
         bot_member = guild.me
         
@@ -72,12 +98,12 @@ async def on_ready():
                 await target_channel.send(warning_msg)
         
         if "configs" in [channel.name for channel in guild.channels]:
-            client.configs = load_configs() 
+            client.configs = load_configs_from_channel(guild, channel_name='configs')
+            print(f"Loaded configurations from 'configs' channel in {guild.name}.")
         else: 
             client.configs = load_configs()
             print(f"No configs channel found in {guild.name}. Loaded default configurations.")
-
-    
+  
 @client.event
 async def on_message(message):
     if message.author == client.user:
@@ -131,15 +157,12 @@ async def on_message(message):
                 await message.channel.send(f"User '{content}' not found.")
         else:
             await message.reply("You do not have permission to use this command.")
-        
-
 
 @client.event
 async def on_member_join(member):
     welcome_channel = discord.utils.get(member.guild.text_channels, name='general')
     if welcome_channel:
-        await welcome_channel.send(f'Welcome to the server, {member.mention}!')
-        
+        await welcome_channel.send(f'Welcome to the server, {member.mention}!')   
         
 @client.event
 async def on_message_delete(message):

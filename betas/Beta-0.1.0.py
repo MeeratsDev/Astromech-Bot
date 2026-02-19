@@ -26,6 +26,7 @@ class MyBot(commands.Bot):
 
     async def on_ready(self):
         print(f'{self.user} has connected to Discord!')
+        print("this is an experimental version of Astromech with slash commands.")
         self.configs = load_configs() # Load configs on startup
         
         for guild in self.guilds:
