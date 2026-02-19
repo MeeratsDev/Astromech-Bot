@@ -98,7 +98,7 @@ async def on_ready():
                 await target_channel.send(warning_msg)
         
         if "configs" in [channel.name for channel in guild.channels]:
-            client.configs = load_configs_from_channel(guild, channel_name='configs')
+            client.configs = await load_configs_from_channel(guild, channel_name='configs')
             print(f"Loaded configurations from 'configs' channel in {guild.name}.")
         else: 
             client.configs = load_configs()
