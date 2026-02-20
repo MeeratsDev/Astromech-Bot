@@ -58,8 +58,11 @@ async def on_ready():
                 await target_channel.send(warning_msg)
         
         if "configs" in [channel.name for channel in guild.channels]:
-            client.configs = await modules.configs.load_configs_from_channel(guild, channel_name='configs')
-            print(f"Loaded configurations from 'configs' channel in {guild.name}.")
+            # client.configs = await modules.configs.load_configs_from_channel(guild, channel_name='configs')
+            # print(f"Loaded configurations from 'configs' channel in {guild.name}.")
+            
+            print("Loading configs from channel is currently disabled. Loading default configurations instead.")
+            client.configs = modules.configs.load_configs()
         else: 
             client.configs = modules.configs.load_configs()
             print(f"No configs channel found in {guild.name}. Loaded default configurations.")
@@ -122,13 +125,22 @@ async def on_message(message):
         the_message = message
         await message.delete()
         
-        await send_as_webhook(
-            channel=the_message.channel,
-            name=the_message.author.display_name,
-            content=the_message.content.replace('..bypass', '').strip(),
-            avatar_url=the_message.author.avatar.url if the_message.author.avatar else None
-        )
+        if str(the_message.author) == str(the_message.author.display_name):
+            await send_as_webhook(
+                channel=the_message.channel,
+                name=the_message.author,
+                content=the_message.content.replace('..bypass', '').strip(),
+                avatar_url=the_message.author.avatar.url if the_message.author.avatar else None
+            )
+        else:
+            await send_as_webhook(
+                channel=the_message.channel,
+                name=str(the_message.author.name) + " (" + str(the_message.author.display_name) + ")",
+                content=the_message.content.replace('..bypass', '').strip(),
+                avatar_url=the_message.author.avatar.url if the_message.author.avatar else None
+            )
     else:
+        print("No command, sending to message handler...")
         await modules.message_handler.handle_message(message, client.configs)
 
 @client.event
