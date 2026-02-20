@@ -122,7 +122,7 @@ async def on_message(message):
         the_message = message
         await message.delete()
         
-        send = await send_as_webhook(
+        await send_as_webhook(
             channel=the_message.channel,
             name=the_message.author.display_name,
             content=the_message.content.replace('..bypass', '').strip(),
