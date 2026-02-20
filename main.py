@@ -70,7 +70,6 @@ async def load_configs_from_channel(guild, channel_name='configs'):
     
     return configs
 
-
 # --- Event Handlers ---
 @client.event
 async def on_ready():
@@ -90,7 +89,7 @@ async def on_ready():
                 f"⚠️ {owner_mention}, {client.user.name} does not have administrator permissions. "
                 "Some features may not work properly."
             )
-            mods_channel = discord.utils.get(guild.text_channels, name='moderators')
+            mods_channel = discord.utils.get(guild.text_channels, name='moderators-only')
             general_channel = discord.utils.get(guild.text_channels, name='general')
             target_channel = mods_channel or general_channel
 
@@ -182,7 +181,6 @@ async def on_message_delete(message):
             return
     
     if permissions.manage_webhooks:
-
         # flags to allow deletion.                                                                                                    this errors sometimes idk why but it does and it's only happened once
         if (message.author == client.user or message.author.name.lower() in {u.lower() for u in whitelisted_users} or any(role.name.lower() in whitelisted_roles for role in message.author.roles)): 
             return
