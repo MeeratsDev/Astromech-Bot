@@ -11,3 +11,8 @@
 # Optional: Ignore environment files in subdirectories
 **/.env
 **/.env.*
+
+
+*.pyc
+
+__pycache__/

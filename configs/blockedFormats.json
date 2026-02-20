@@ -1,0 +1,40 @@
+{
+    "blocked_patterns": {
+        "discord_everyone_here": {
+            "description": "@everyone or @here mention",
+            "regex": "@everyone|@here"
+        },
+        "discord_invite": {
+            "description": "Discord invite link",
+            "regex": "(?:https?:\\/\\/)?(?:www\\.)?(?:discord\\.gg|discord\\.com\\/invite)\\/[A-Za-z0-9-]+"
+        },
+        "discord_token": {
+            "description": "Possible Discord bot/user token",
+            "regex": "[A-Za-z\\d]{24}\\.[A-Za-z\\d_-]{6}\\.[A-Za-z\\d_-]{27}"
+        },
+        "nitro_scam": {
+            "description": "Common Nitro scam phrases",
+            "regex": "(?i)free\\s*nitro|steam\\s*gift|claim\\s*reward|limited\\s*time\\s*offer"
+        },
+        "email": {
+            "description": "Email address",
+            "regex": "\\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}\\b"
+        },
+        "phone_number": {
+            "description": "International phone number",
+            "regex": "\\b\\+?[1-9]\\d{7,14}\\b"
+        },
+        "ipv4_address": {
+            "description": "IPv4 address",
+            "regex": "\\b(?:\\d{1,3}\\.){3}\\d{1,3}\\b"
+        },
+        "credit_card": {
+            "description": "Major credit card number",
+            "regex": "\\b(?:4\\d{3}|5[1-5]\\d{2}|3[47]\\d{2}|6(?:011|5\\d{2}))(?:[-\\s]?\\d{4}){3}\\b"
+        },
+        "street_address": {
+            "description": "Basic street address pattern",
+            "regex": "\\b\\d{1,6}\\s+[A-Za-z0-9#.,\\-\\s]{3,40}(Street|St|Avenue|Ave|Boulevard|Blvd|Road|Rd|Lane|Ln|Drive|Dr|Court|Ct)\\b\\.?"
+        }
+    }
+}

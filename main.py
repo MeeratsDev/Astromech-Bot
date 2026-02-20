@@ -1,4 +1,4 @@
-import os, discord, json, asyncio
+import os, discord, json, asyncio, modules.message_handler, modules.configs
 from dotenv import load_dotenv
 from pathlib import Path
 from discord.utils import get
@@ -9,7 +9,7 @@ intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
 client = discord.Client(intents=intents)
-client.wiped_messages = set()  # Track wiped messages to prevent re-logging
+client.wiped_messages = set()
 
 # --- Helper Functions ---
 async def send_as_webhook(channel, name, content, avatar_url=None):
@@ -30,45 +30,6 @@ async def send_as_webhook(channel, name, content, avatar_url=None):
     except Exception as e:
         print(f"Webhook Error: {e}")
         return False
-
-def load_configs():
-    configs = {}
-    config_path = Path("./configs")
-
-    for file in config_path.glob("*.json"):
-        try:
-            with file.open("r", encoding="utf-8") as f:
-                configs[file.stem] = json.load(f)
-        except json.JSONDecodeError as e:
-            print(f"Error parsing {file.name}: {e}")
-
-    return configs
-
-async def load_configs_from_channel(guild, channel_name='configs'):
-    configs = {}
-    configs_channel = discord.utils.get(guild.text_channels, name=channel_name)
-    
-    if configs_channel:
-        try:
-            async for message in configs_channel.history(limit=100):
-                if message.attachments:
-                    attachment = message.attachments[0]
-                    if attachment.filename.endswith('.json'):
-                        file_content = await attachment.read()
-                        try:
-                            config_data = json.loads(file_content)
-                            config_name = attachment.filename[:-5]  # Remove .json extension
-                            configs[config_name] = config_data
-                        except json.JSONDecodeError as e:
-                            print(f"Error parsing {attachment.filename}: {e}")
-                    else:
-                        print(f"Skipping {attachment.filename}: Not a JSON file.")
-                else:
-                    print(f"Skipping message {message.id}: No attachments found.")
-        except Exception as e:
-            print(f"Error loading configs from channel: {e}")
-    
-    return configs
 
 # --- Event Handlers ---
 @client.event
@@ -97,10 +58,10 @@ async def on_ready():
                 await target_channel.send(warning_msg)
         
         if "configs" in [channel.name for channel in guild.channels]:
-            client.configs = await load_configs_from_channel(guild, channel_name='configs')
+            client.configs = await modules.configs.load_configs_from_channel(guild, channel_name='configs')
             print(f"Loaded configurations from 'configs' channel in {guild.name}.")
         else: 
-            client.configs = load_configs()
+            client.configs = modules.configs.load_configs()
             print(f"No configs channel found in {guild.name}. Loaded default configurations.")
   
 @client.event
@@ -108,9 +69,6 @@ async def on_message(message):
     if message.author == client.user:
         return
 
-    #if message.content.startswith('!ping'):
-    #    await message.channel.send('Pong!')
-        
     if message.content.startswith('!debug.info'):
         debug_info = f"User: {message.author}\nChannel: {message.channel}\nGuild: {message.guild}"
         await message.channel.send(f"Debug Info:\n{debug_info}")
@@ -130,18 +88,22 @@ async def on_message(message):
         if amount.isdigit():
             amount = int(amount)
         else:
-            amount = 5  # Default amount if not a number
+            amount = 5
         
-        for i in range(amount):  # Adjust the amount as needed
-            await message.channel.send("Boom! 💥")
-            await asyncio.sleep(0.25)  # Add a small delay between messages to avoid spamming too quickly
+        if amount > 20:
+            await message.channel.send("Please use a lower number.")
+            return
+        
+        for i in range(amount):
+            await message.channel.send("@everyone Boom! 💥")
+            await asyncio.sleep(0.25)
     elif message.content.startswith('!config.reload'):
-        client.configs = load_configs()
+        client.configs = modules.configs.load_configs()
         await message.channel.send("Configurations reloaded successfully.")
     elif message.content.startswith('!terminate'):
         configs = client.configs
         
-        if (message.author == client.user or any(role.name.lower() in configs["deletionRoleWhitelist"]["guild_staff_roles"] for role in message.author.roles)):
+        if (message.author == client.user or any(role.name.lower() in configs["deletionRoleWhitelist"]["guild_staff_roles"] for role in message.author.roles)) or message.author.name.lower() in configs["deletionUserWhitelist"]["whitelisted_users"]:
             content = message.content.replace('!terminate', '').strip()
             if message.mentions:
                 member = message.mentions[0]
@@ -156,6 +118,18 @@ async def on_message(message):
                 await message.channel.send(f"User '{content}' not found.")
         else:
             await message.reply("You do not have permission to use this command.")
+    elif message.content.startswith('..bypass'):
+        the_message = message
+        await message.delete()
+        
+        send = await send_as_webhook(
+            channel=the_message.channel,
+            name=the_message.author.display_name,
+            content=the_message.content.replace('..bypass', '').strip(),
+            avatar_url=the_message.author.avatar.url if the_message.author.avatar else None
+        )
+    else:
+        await modules.message_handler.handle_message(message, client.configs)
 
 @client.event
 async def on_member_join(member):
@@ -176,12 +150,12 @@ async def on_message_delete(message):
         r.lower() for r in (staff_roles + trusted_roles)
     }
     
-    if message.id in client.wiped_messages: # check if the message was wiped by the bot, if so, skip logging and remove from set
+    if message.id in client.wiped_messages:
             client.wiped_messages.remove(message.id)
             return
     
     if permissions.manage_webhooks:
-        # flags to allow deletion.                                                                                                    this errors sometimes idk why but it does and it's only happened once
+        #                                                                                                                  this errors sometimes idk why but it does and it's only happened once
         if (message.author == client.user or message.author.name.lower() in {u.lower() for u in whitelisted_users} or any(role.name.lower() in whitelisted_roles for role in message.author.roles)): 
             return
         
@@ -191,9 +165,9 @@ async def on_message_delete(message):
             await logs_channel.send(f'{message.author.mention}: "{message.content}"')
         
         if msg_channel:
-            print(message.author.display_name, message.author, message.author.name) # debugging to check if display name is the same as username, if so, just use username, if not, use both.
+            print(message.author.display_name, message.author, message.author.name)
             
-            if str(message.author) == str(message.author.display_name):   # if the display name is the same as the username, just use the username, otherwise use both to avoid confusion.
+            if str(message.author) == str(message.author.display_name):
                 await send_as_webhook(
                     channel=msg_channel,
                     name=str(message.author),
