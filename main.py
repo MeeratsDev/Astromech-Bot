@@ -139,6 +139,12 @@ async def on_message(message):
                 content=the_message.content.replace('..bypass', '').strip(),
                 avatar_url=the_message.author.avatar.url if the_message.author.avatar else None
             )
+    elif message.content.startswith('!shutdown'):
+        if str(message.author) == "meerats":
+            await on_shutdown()
+            await client.close()
+        else:
+            await message.channel.send("You do not have permission to use this command.")
     else:
         print("No command, sending to message handler...")
         await modules.message_handler.handle_message(message, client.configs)
@@ -198,4 +204,17 @@ async def on_message_delete(message):
         await message.channel.send(f'<{message.author.mention}> "{message.content}"')
         
         
+async def on_shutdown():
+    for guild in client.guilds:
+        moderators_channel = discord.utils.get(guild.text_channels, name='moderators-only')
+        general_channel = discord.utils.get(guild.text_channels, name='general')
+        target_channel = moderators_channel or general_channel
+        
+        if target_channel:
+            warning_msg = f"⚠️ {client.user.name} is shutting down. Some features may not work properly until the bot is back online."
+            try:
+                await target_channel.send(warning_msg)
+            except Exception as e:
+                print(f"Failed to send shutdown warning to channel {target_channel.name}: {e}")
+
 client.run(TOKEN)
