@@ -1,4 +1,4 @@
-import os, discord, json, asyncio, modules.message_handler, modules.configs
+import os, discord, json, asyncio, modules.message_handler, modules.configs, modules.leveling, aiosqlite, datetime, discord.errors, re, random as rand
 from dotenv import load_dotenv
 from pathlib import Path
 from discord.utils import get
@@ -10,6 +10,8 @@ intents.message_content = True
 intents.members = True
 client = discord.Client(intents=intents)
 client.wiped_messages = set()
+client.xp_cooldowns = {}
+client.db_path = "./configs/levels.db"
 
 # --- Helper Functions ---
 async def send_as_webhook(channel, name, content, avatar_url=None):
@@ -66,6 +68,10 @@ async def on_ready():
         else: 
             client.configs = modules.configs.load_configs()
             print(f"No configs channel found in {guild.name}. Loaded default configurations.")
+            
+    async with aiosqlite.connect("levels.db") as db:
+        await db.execute("CREATE TABLE IF NOT EXISTS users (user_id INTEGER PRIMARY KEY, xp INTEGER, level INTEGER)")
+        await db.commit()
   
 @client.event
 async def on_message(message):
@@ -87,19 +93,28 @@ async def on_message(message):
                     client.wiped_messages.add(msg.id)
                     await msg.delete()
     elif message.content.startswith('!boom'):
-        amount = message.content.replace('!boom', '').strip()
-        if amount.isdigit():
-            amount = int(amount)
+        the_message = message
+        await message.delete()
+        # Remove the command part
+        content = message.content[len('!boom'):].strip()
+
+        # Match: number + optional quoted message
+        match = re.match(r'(\d+)(?:\s+"(.+)")?', content)
+
+        if match:
+            amount = int(match.group(1))
+            added_message = match.group(2) if match.group(2) else "Boom! 💥"
         else:
             amount = 5
-        
+            added_message = "Boom! 💥"
+
         if amount > 20:
-            await message.channel.send("Please use a lower number.")
+            await the_message.channel.send("Please use a lower number.")
             return
-        
-        for i in range(amount):
-            await message.channel.send("@everyone Boom! 💥")
-            await asyncio.sleep(0.25)
+
+        for _ in range(amount):
+            await message.channel.send(f"@everyone {added_message}")
+        await asyncio.sleep(0.25)
     elif message.content.startswith('!config.reload'):
         client.configs = modules.configs.load_configs()
         await message.channel.send("Configurations reloaded successfully.")
@@ -115,10 +130,12 @@ async def on_message(message):
                         get(message.guild.members, display_name=content)
 
             if member:
-                await message.channel.send(f"Terminating {member.display_name}... 💀")
+                await message.reply(f"Deactivating {member.display_name}... 💀")
                 await member.kick(reason=f"Terminated by {message.author}")
             else:
                 await message.channel.send(f"User '{content}' not found.")
+            
+            await message.delete()
         else:
             await message.reply("You do not have permission to use this command.")
     elif message.content.startswith('..bypass'):
@@ -145,9 +162,80 @@ async def on_message(message):
             await client.close()
         else:
             await message.channel.send("You do not have permission to use this command.")
+    elif message.content.startswith('!mute'):
+        configs = client.configs
+
+        if (message.author == client.user or 
+            any(role.name.lower() in configs["deletionRoleWhitelist"]["guild_staff_roles"] 
+                for role in message.author.roles) or 
+            message.author.name.lower() in configs["deletionUserWhitelist"]["whitelisted_users"]):
+
+            content = message.content.replace('!mute', '').strip()
+
+            if message.mentions:
+                member = message.mentions[0]
+            else:
+                member = get(message.guild.members, name=content) or \
+                        get(message.guild.members, display_name=content)
+
+            if member:
+                try:
+                    await message.reply(f"Putting restraining bolt on {member.display_name}... 🤐")
+                    await member.timeout(datetime.timedelta(minutes=10))
+                except discord.errors.Forbidden:
+                    await message.reply("I don't have permission to timeout that user.")
+            else:
+                await message.channel.send(f"User '{content}' not found.")
+
+            await message.delete()
+    elif message.content.startswith('!checkrank'):
+        rank = await modules.leveling.get_user_level(message.author.id, client.db_path, client.configs)
+        await message.reply(f"Your current rank is: {rank}")
+    elif message.content.startswith(client.user.mention) or message.content.startswith(f"<@!{client.user.id}>"):
+        response = rand.randint(1, 20)  # 20 options for more variety
+        if response == 1:
+            await message.reply("Bleep‑bloop!")
+        elif response == 2:
+            await message.reply("Beep‑beep! Boop‑beep!")
+        elif response == 3:
+            await message.reply("Ee‑oo‑brrt")
+        elif response == 4:
+            await message.reply("Bleep‑bloop‑whistle")
+        elif response == 5:
+            await message.reply("Boop‑brrt‑zzt!")
+        elif response == 6:
+            await message.reply("Whirrr‑beep! Zwoop!")
+        elif response == 7:
+            await message.reply("Ee‑bloop‑bzzz‑boop")
+        elif response == 8:
+            await message.reply("Zzt‑whistle‑beep‑bop!")
+        elif response == 9:
+            await message.reply("Beep‑whirr‑boop‑ee!")
+        elif response == 10:
+            await message.reply("Bloop‑bzzt‑whistle")
+        elif response == 11:
+            await message.reply("Boop‑ee‑bzzt‑whirr")
+        elif response == 12:
+            await message.reply("Ee‑brrt‑zwoop!")
+        elif response == 13:
+            await message.reply("Whistle‑beep‑bzzt‑boop")
+        elif response == 14:
+            await message.reply("Bleep‑whirrr‑zzt!")
+        elif response == 15:
+            await message.reply("Boop‑bzzt‑ee‑whirrr")
+        elif response == 16:
+            await message.reply("Zwoop‑bleep‑brrt")
+        elif response == 17:
+            await message.reply("Ee‑whirr‑boop‑bzzt")
+        elif response == 18:
+            await message.reply("Bloop‑zzt‑whistle‑beep!")
+        elif response == 19:
+            await message.reply("Beep‑boop‑ee‑whirr!")
+        else:  # response == 20
+            await message.reply("Zzt‑bloop‑boop‑whirr!")
     else:
         print("No command, sending to message handler...")
-        await modules.message_handler.handle_message(message, client.configs)
+        await modules.message_handler.handle_message(message, client.configs, client)
 
 @client.event
 async def on_member_join(member):

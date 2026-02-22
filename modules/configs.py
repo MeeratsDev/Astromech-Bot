@@ -37,3 +37,13 @@ async def load_configs_from_channel(guild, channel_name='configs'):
                     print(f"Skipping message {message.id}: No attachments found.")
         except Exception as e:
             print(f"Error loading configs from channel: {e}")
+            
+def load_member_configs(guild):
+    member_configs = {}
+    for member in guild.members:
+        member_configs[str(member.id)] = {
+            "xp": 0,
+            "level": 1,
+            "last_message_time": None
+        }
+    return member_configs
