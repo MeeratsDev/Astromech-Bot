@@ -1,4 +1,4 @@
-import re, discord, random, aiosqlite, modules.leveling as leveling
+import re, modules.leveling as leveling
 
 def contains_blocked_pattern(text, configs):
     try:
@@ -13,15 +13,13 @@ def contains_blocked_pattern(text, configs):
     return False, None
 
 async def handle_message(message, configs, client=None):
-    print(f"Received message: '{message.content}' from {message.author}")
     blocked, pattern_name = contains_blocked_pattern(message.content, configs)
-    print(f"Blocked: {blocked}, Pattern Name: {pattern_name}")
 
     if blocked:
-        print(f"Message matched blocked pattern: {pattern_name}. Deleting message.")
+        print(f"Message by {message.author} matched blocked pattern: {pattern_name}. Deleting message.")
         await message.delete()
         await message.channel.send(
-            f"{message.author.mention}, your message was removed (matched: {pattern_name})."
+            f"{message.author.mention}, your message was removed for: {pattern_name}."
         )
     else:
         await leveling.level(message, client.db_path, client.xp_cooldowns)

@@ -189,50 +189,58 @@ async def on_message(message):
 
             await message.delete()
     elif message.content.startswith('!checkrank'):
+        client.ranks = ["Ensign", "Lieutenant", "Lieutenant Commander", "Commander", "Captain", "Vice Admiral", "Admiral", "Fleet Admiral"]
         rank = await modules.leveling.get_user_level(message.author.id, client.db_path, client.configs)
-        await message.reply(f"Your current rank is: {rank}")
+        rank = client.ranks[rank - 1]
+
+        role = discord.utils.get(message.guild.roles, name=rank)
+
+        if message.guild.get_role(rank) is not None:
+            await message.reply(f"Your current rank is: {role.mention}")
+        else:
+            await message.reply(f"Your current rank is: {rank}")
     elif message.content.startswith(client.user.mention) or message.content.startswith(f"<@!{client.user.id}>"):
-        response = rand.randint(1, 20)  # 20 options for more variety
+        response = rand.randint(1, 20)
         if response == 1:
-            await message.reply("Bleep‑bloop!")
+            await message.reply("Bleep-bloop!")
         elif response == 2:
-            await message.reply("Beep‑beep! Boop‑beep!")
+            await message.reply("Beep-beep! Boop-beep!")
         elif response == 3:
-            await message.reply("Ee‑oo‑brrt")
+            await message.reply("Ee-oo-brrt")
         elif response == 4:
-            await message.reply("Bleep‑bloop‑whistle")
+            await message.reply("Bleep-bloop-whistle")
         elif response == 5:
-            await message.reply("Boop‑brrt‑zzt!")
+            await message.reply("Boop-brrt-zzt!")
         elif response == 6:
-            await message.reply("Whirrr‑beep! Zwoop!")
+            await message.reply("Whirrr-beep! Zwoop!")
         elif response == 7:
-            await message.reply("Ee‑bloop‑bzzz‑boop")
+            await message.reply("Ee-bloop-bzzz-boop")
         elif response == 8:
-            await message.reply("Zzt‑whistle‑beep‑bop!")
+            await message.reply("Zzt-whistle-beep-bop!")
         elif response == 9:
-            await message.reply("Beep‑whirr‑boop‑ee!")
+            await message.reply("Beep-whirr-boop-ee!")
         elif response == 10:
-            await message.reply("Bloop‑bzzt‑whistle")
+            await message.reply("Bloop-bzzt-whistle")
         elif response == 11:
-            await message.reply("Boop‑ee‑bzzt‑whirr")
+            await message.reply("Boop-ee-bzzt-whirr")
         elif response == 12:
-            await message.reply("Ee‑brrt‑zwoop!")
+            await message.reply("Ee-brrt-zwoop!")
         elif response == 13:
-            await message.reply("Whistle‑beep‑bzzt‑boop")
+            await message.reply("Whistle-beep-bzzt-boop")
         elif response == 14:
-            await message.reply("Bleep‑whirrr‑zzt!")
+            await message.reply("Bleep-whirrr-zzt!")
         elif response == 15:
-            await message.reply("Boop‑bzzt‑ee‑whirrr")
+            await message.reply("Boop-bzzt-ee-whirrr")
         elif response == 16:
-            await message.reply("Zwoop‑bleep‑brrt")
+            await message.reply("Zwoop-bleep-brrt")
         elif response == 17:
-            await message.reply("Ee‑whirr‑boop‑bzzt")
+            await message.reply("Ee-whirr-boop-bzzt")
         elif response == 18:
-            await message.reply("Bloop‑zzt‑whistle‑beep!")
+            await message.reply("Bloop-zzt-whistle-beep!")
         elif response == 19:
-            await message.reply("Beep‑boop‑ee‑whirr!")
+            await message.reply("Beep-boop-ee-whirr!")
         else:  # response == 20
-            await message.reply("Zzt‑bloop‑boop‑whirr!")
+            await message.reply("Zzt-bloop-boop-whirr!")
     else:
         print("No command, sending to message handler...")
         await modules.message_handler.handle_message(message, client.configs, client)
@@ -241,7 +249,9 @@ async def on_message(message):
 async def on_member_join(member):
     welcome_channel = discord.utils.get(member.guild.text_channels, name='general')
     if welcome_channel:
-        await welcome_channel.send(f'Welcome to the server, {member.mention}!')   
+        if str(member.guild.name).lower() == "the open circle fleet":
+            await welcome_channel.send(f'Welcome aboard the Negotiator, {member.mention}!')
+        else: await welcome_channel.send(f'Welcome aboard, {member.mention}!')   
         
 @client.event
 async def on_message_delete(message):

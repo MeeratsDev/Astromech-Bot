@@ -37,7 +37,5 @@ async def get_user_level(user_id, db, configs):
             if result is None:
                 return 0, 0
             elif result:
-                if result in configs["levels"]["level_ranks"]:
-                    return result in configs["levels"]["level_ranks"]
-                else:
-                    return
+                xp, level = result
+                return level
