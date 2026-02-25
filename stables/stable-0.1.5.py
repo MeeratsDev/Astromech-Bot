@@ -1,9 +1,15 @@
-import os, discord, asyncio, modules.message_handler, modules.configs, modules.leveling, aiosqlite, datetime, discord.errors, re, random as rand
+import os, discord, asyncio, modules.message_handler, modules.configs, modules.leveling, aiosqlite, datetime, discord.errors, re, random as rand, sys
 from dotenv import load_dotenv
 from pathlib import Path
 from discord.utils import get
 
-load_dotenv()
+if getattr(sys, 'frozen', False):
+    base_path = sys._MEIPASS
+else:
+    base_path = os.path.dirname(__file__)
+
+load_dotenv(os.path.join(base_path, ".env"))
+
 TOKEN = os.getenv('DISCORD_TOKEN')
 intents = discord.Intents.default()
 intents.message_content = True
@@ -12,6 +18,7 @@ client = discord.Client(intents=intents)
 client.wiped_messages = set()
 client.xp_cooldowns = {}
 client.db_path = "./configs/levels.db"
+
 
 # --- Helper Functions ---
 async def send_as_webhook(channel, name, content, avatar_url=None):
