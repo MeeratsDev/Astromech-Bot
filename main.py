@@ -95,10 +95,9 @@ async def on_message(message):
     elif message.content.startswith('!boom'):
         the_message = message
         await message.delete()
-        # Remove the command part
+
         content = message.content[len('!boom'):].strip()
 
-        # Match: number + optional quoted message
         match = re.match(r'(\d+)(?:\s+"(.+)")?', content)
 
         if match:
@@ -201,26 +200,11 @@ async def on_message(message):
             await message.reply(f"Your current rank is: {rank}")
     elif message.content.startswith(client.user.mention) or message.content.startswith(f"<@!{client.user.id}>"):
         responses = [
-            "Bleep-bloop!",
-            "Beep-beep! Boop-beep!",
-            "Ee-oo-brrt",
-            "Bleep-bloop-whistle",
-            "Boop-brrt-zzt!",
-            "Whirrr-beep! Zwoop!",
-            "Ee-bloop-bzzz-boop",
-            "Zzt-whistle-beep-bop!",
-            "Beep-whirr-boop-ee!",
-            "Bloop-bzzt-whistle",
-            "Boop-ee-bzzt-whirr",
-            "Ee-brrt-zwoop!",
-            "Whistle-beep-bzzt-boop",
-            "Bleep-whirrr-zzt!",
-            "Boop-bzzt-ee-whirrr",
-            "Zwoop-bleep-brrt",
-            "Ee-whirr-boop-bzzt",
-            "Bloop-zzt-whistle-beep!",
-            "Beep-boop-ee-whirr!",
-            "Zzt-bloop-boop-whirr!"
+            "Bleep-bloop!","Beep-beep! Boop-beep!","Ee-oo-brrt","Bleep-bloop-whistle","Boop-brrt-zzt!",
+            "Whirrr-beep! Zwoop!","Ee-bloop-bzzz-boop","Zzt-whistle-beep-bop!","Beep-whirr-boop-ee!",
+            "Bloop-bzzt-whistle","Boop-ee-bzzt-whirr","Ee-brrt-zwoop!","Whistle-beep-bzzt-boop",
+            "Bleep-whirrr-zzt!","Boop-bzzt-ee-whirrr","Zwoop-bleep-brrt","Ee-whirr-boop-bzzt",
+            "Bloop-zzt-whistle-beep!","Beep-boop-ee-whirr!","Zzt-bloop-boop-whirr!"
         ]
         response = rand.randint(0, responses.__len__() - 1)
         
