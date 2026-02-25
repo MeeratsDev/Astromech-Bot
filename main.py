@@ -200,47 +200,32 @@ async def on_message(message):
         else:
             await message.reply(f"Your current rank is: {rank}")
     elif message.content.startswith(client.user.mention) or message.content.startswith(f"<@!{client.user.id}>"):
-        response = rand.randint(1, 20)
-        if response == 1:
-            await message.reply("Bleep-bloop!")
-        elif response == 2:
-            await message.reply("Beep-beep! Boop-beep!")
-        elif response == 3:
-            await message.reply("Ee-oo-brrt")
-        elif response == 4:
-            await message.reply("Bleep-bloop-whistle")
-        elif response == 5:
-            await message.reply("Boop-brrt-zzt!")
-        elif response == 6:
-            await message.reply("Whirrr-beep! Zwoop!")
-        elif response == 7:
-            await message.reply("Ee-bloop-bzzz-boop")
-        elif response == 8:
-            await message.reply("Zzt-whistle-beep-bop!")
-        elif response == 9:
-            await message.reply("Beep-whirr-boop-ee!")
-        elif response == 10:
-            await message.reply("Bloop-bzzt-whistle")
-        elif response == 11:
-            await message.reply("Boop-ee-bzzt-whirr")
-        elif response == 12:
-            await message.reply("Ee-brrt-zwoop!")
-        elif response == 13:
-            await message.reply("Whistle-beep-bzzt-boop")
-        elif response == 14:
-            await message.reply("Bleep-whirrr-zzt!")
-        elif response == 15:
-            await message.reply("Boop-bzzt-ee-whirrr")
-        elif response == 16:
-            await message.reply("Zwoop-bleep-brrt")
-        elif response == 17:
-            await message.reply("Ee-whirr-boop-bzzt")
-        elif response == 18:
-            await message.reply("Bloop-zzt-whistle-beep!")
-        elif response == 19:
-            await message.reply("Beep-boop-ee-whirr!")
-        else:  # response == 20
-            await message.reply("Zzt-bloop-boop-whirr!")
+        responses = [
+            "Bleep-bloop!",
+            "Beep-beep! Boop-beep!",
+            "Ee-oo-brrt",
+            "Bleep-bloop-whistle",
+            "Boop-brrt-zzt!",
+            "Whirrr-beep! Zwoop!",
+            "Ee-bloop-bzzz-boop",
+            "Zzt-whistle-beep-bop!",
+            "Beep-whirr-boop-ee!",
+            "Bloop-bzzt-whistle",
+            "Boop-ee-bzzt-whirr",
+            "Ee-brrt-zwoop!",
+            "Whistle-beep-bzzt-boop",
+            "Bleep-whirrr-zzt!",
+            "Boop-bzzt-ee-whirrr",
+            "Zwoop-bleep-brrt",
+            "Ee-whirr-boop-bzzt",
+            "Bloop-zzt-whistle-beep!",
+            "Beep-boop-ee-whirr!",
+            "Zzt-bloop-boop-whirr!"
+        ]
+        response = rand.randint(0, responses.__len__() - 1)
+        
+        response = responses[response]
+        await message.reply(f"{response}")
     else:
         print("No command, sending to message handler...")
         await modules.message_handler.handle_message(message, client.configs, client)
