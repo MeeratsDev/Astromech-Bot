@@ -1,5 +1,4 @@
-import os, discord, asyncio, modules.message_handler, modules.configs, modules.leveling, aiosqlite, datetime, discord.errors, re, random as rand
-import sys
+import os, discord, asyncio, modules.message_handler, modules.configs, modules.leveling, aiosqlite, datetime, discord.errors, re, random as rand, sys
 from dotenv import load_dotenv
 from pathlib import Path
 from discord.utils import get
@@ -9,8 +8,9 @@ from discord.utils import get
 #else:
     #base_path = os.path.dirname(__file__)
 
-load_dotenv#(os.path.join(base_path, ".env"))
+load_dotenv()#(os.path.join(base_path, ".env"))
 
+OWNER_ID = os.getenv('OWNER_ID')
 TOKEN = os.getenv('DISCORD_TOKEN')
 intents = discord.Intents.default()
 intents.message_content = True
@@ -126,7 +126,7 @@ async def on_message(message):
     elif message.content.startswith('!terminate'):
         configs = client.configs
         
-        if (message.author == client.user or any(role.name.lower() in configs["deletionRoleWhitelist"]["guild_staff_roles"] for role in message.author.roles)) or message.author.name.lower() in configs["deletionUserWhitelist"]["whitelisted_users"]:
+        if (message.author == client.user or any(role.name.lower() in configs["RoleWhitelist"]["guild_staff_roles"] for role in message.author.roles)) or message.author.name.lower() in configs["UserWhitelist"]["whitelisted_users"]:
             content = message.content.replace('!terminate', '').strip()
             if message.mentions:
                 member = message.mentions[0]
@@ -162,7 +162,7 @@ async def on_message(message):
                 avatar_url=the_message.author.avatar.url if the_message.author.avatar else None
             )
     elif message.content.startswith('!shutdown'):
-        if str(message.author) == "meerats":
+        if str(message.author.id) == OWNER_ID:
             await on_shutdown()
             await client.close()
         else:
@@ -171,9 +171,9 @@ async def on_message(message):
         configs = client.configs
 
         if (message.author == client.user or 
-            any(role.name.lower() in configs["deletionRoleWhitelist"]["guild_staff_roles"] 
+            any(role.name.lower() in configs["RoleWhitelist"]["guild_staff_roles"] 
                 for role in message.author.roles) or 
-            message.author.name.lower() in configs["deletionUserWhitelist"]["whitelisted_users"]):
+            message.author.name.lower() in configs["UserWhitelist"]["whitelisted_users"]):
 
             content = message.content.replace('!mute', '').strip()
 
@@ -233,9 +233,9 @@ async def on_message_delete(message):
     permissions = message.channel.permissions_for(message.guild.me)
     configs = client.configs
     
-    staff_roles = configs["deletionRoleWhitelist"]["guild_staff_roles"]
-    trusted_roles = configs["deletionRoleWhitelist"]["guild_trusted_roles"]
-    whitelisted_users = configs["deletionUserWhitelist"]["whitelisted_users"]
+    staff_roles = configs["RoleWhitelist"]["guild_staff_roles"]
+    trusted_roles = configs["RoleWhitelist"]["guild_trusted_roles"]
+    whitelisted_users = configs["UserWhitelist"]["whitelisted_users"]
     
     whitelisted_roles = {
         r.lower() for r in (staff_roles + trusted_roles)
